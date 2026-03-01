@@ -251,45 +251,6 @@ emerge --ask sys-boot/grub  # 安装grub
 grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=Gentoo  
 grub-mkconfig -o /boot/grub/grub.cfg  
 
-完成上述操作后，整个内核的安装配置过程就已经完成了。  
-如果还在犹豫，我也展示下我是怎么安装的，并进行更详细的讲解。如果已经装好并觉得啰嗦了，可以直接看下一步了  
-我打算使用使用第三方内核源码xanmod-sources，它在第三方的gentoo仓库中，名叫parona-overlay，使用刚刚安装的eselect-repository软件包拉取这个第三方仓库。  
-`eselect repository enable parona-overlay`  
-`emaint sync -r parona-overlay`  
-
-顺便再看看gentoo-sources这个软件包的稳定版本是多少  
-`eix-update`  
-`eix gentoo-sources`  
-
-我目前显示sys-kernel/gentoo-sources的最新稳定版是6.12.58，为了确保系统能稳定运行，我用的第三方内核版本将与官方内核版本对齐。  
-`emerge --ask xanmod-sources:6.12.58 --autounmask`  
-
-输入`etc-update`后再输入-3，自动合并所有剩余文件  
-
-`eselect kernel list`  
-`eselect kernel set X`  # 选择自己要编译的内核，我选linux-6.12.58-xanmod。选择后系统会自行将/usr/src/linux-6.12.58-xanmod链接至/usr/src/linux  
-`cd /usr/src/linux` # 进入内核目录  
-`make x86_64_defconfig.config` # 使用默认内核配置  
-`make menuconfig` # 进入内核配置界面  
-我会优先保证实时性能来做针对性优化，因为我想让我的操作系统主要用于图形界面交互。  
-先来到General setup，将Kernel compression mode 设为LZ4,Timer tick handling 设为Full dynticks system (tickless)，Preemption Model设为Fully Preemptible Kernel (Real-Time),除了Support initial ramdisk/ramfs compressed using lz4以外的几个选项都设为N。  
-再进到Processor type and features。因为我是intel i3 12100f，所以Processor family设为Intel Alder Lake并删掉AMDcpu相关的优化。Support for extended (non-PC) x86 platforms和Enable MPS table这些也取消掉，我用不上这些。  
-之后再去Device Drivers删掉一些我用不上的驱动，比如网络我只需要有线网卡realtek 8168，Ethernet driver support中就只启用Realtek 8169/8168/8101/8125 ethernet support，无线网卡同理，显卡驱动也是如此，我只用AMDGPU我就只保留这个。  
-File systems也和上面一样，禁用自己用不到的。  
-如果要使用iwd、alsa、steam、podman、qemu等软件。在配置时可以开个浏览器看下相关的内核配置文档，跟着文档来配置那些软件需要用到的内核配置。  
-在探索精简内核配置的过程中，难免会因为精简过多选项导致卡在内核启动，我的建议是先将非常确定不会出现问题的设置保存好，再逐步向精简探索。如果内核挂了，就重新使用u盘重新挂载系统，使用保存的配置继续精简内核，并判断是哪个配置导致的问题。  
-目前已知开启Full dynticks system (tickless)后会与iptables、nftables所要求的内核配置冲突，导致无法使用这类工具，且docker、podman和blender也会因为某些内核选项被禁用性能也会下降，请自行权衡利弊。当然用双内核的方式使用系统也是可行的。  
-
-以上工作完成后执行。  
-
-我借助systemd-boot、installkernel、dracut工具来帮助我安装内核  
-`echo "sys-apps/systemd boot" >> /etc/portage/package.use/systemd-boot`  
-`echo "sys-kernel/installkernel systemd systemd-boot dracut" >> /etc/portage/package.use/installkernel`  #给installkernel加入dracut的use标志则会帮助我们自动构建initramfs镜像，类似于genkernel使用initramfs参数  
-`emerge --ask sys-kernel/dracut`  
-`emerge --ask sys-kernel/installkernel`  
-`bootctl install`  
-好了，内核彻底搞定了，该进入下一个步骤了。  
-
 ### 配置网络  
 emerge --ask dhcpcd  
 如果你需要连接无线网络，我推荐iwd这个软件包。  
