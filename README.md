@@ -215,28 +215,31 @@ UUID="fbd101d1-5b3c-4e48-b1d8-f857cd775733"	/			btrfs	defaults,noatime			0 1
 gentoo的特色之二，就是鼓励自行配置系统内核。  
 编译内核的方式与过程多种多样，下面我来详细说说。  
 以下三个方法三选一。  
-1、直接安装gentoo-kernel-bin软件包  
+第一种方法：直接安装gentoo-kernel-bin软件包  
 `emerge --ask gentoo-kernel-bin` # 此命令能自动完成内核编译，主打一个方便。但这样的缺点也很明显，没有改变任何内核设置。几乎所有功能都包含在了内核里面。一般想省时省事用这个方法比较合适。  
 
-2、使用genkernel工具  
+第二种方法：使用genkernel工具  
 `emerge --ask gentoo-sources`  # 先安装内核源码  
 `emerge --ask genkernel`  # 安装genkernel
 `eselect kernel list`  # 查看内核  
 `eselect kernel set X`  # 选择内核  
-`genkernel --menuconfig kernel`  # 进到linux内核配置界面，genkernel默认使用gentoo-kernel的内核配置，此配置开箱即用，你也可以在此基础上做精简，比如精简掉你用不到的网卡、声卡、显卡等驱动和文件系统等。  
+`genkernel --menuconfig kernel`  # 进到linux内核配置界面，genkernel默认使用gentoo-kernel的内核配置，此配置通常开箱即用，你也可以在此基础上做精简，比如精简掉你用不到的网卡、声卡、显卡等驱动和文件系统等。  
 除了可以设为N或Y还可以将一些配置以模块形式加载（即设为M）。还请避免过度精简导致开机时内核启动卡住，这时就需要自己排除问题了。  
 
 **TIPS：**genkernel还有一些其他的用法，可以使用genkernel --help来查看或者去看gentoo的genkernel文档，等下就会说到如何用genkernel来配置initramfs，https://wiki.gentoo.org/wiki/Genkernel/zh-cn。  
 
-3、直接进linux内核目录，手动完成整个编译流程  
+第三种方法：直接进linux内核目录，手动完成整个编译流程  
 `emerge --ask gentoo-sources`  # 先安装内核源码  
 `eselect kernel list`  # 查看当前内核  
 `eselect kernel set X`  # 选择当前内核  
 `cd /usr/src/linux`  #进入linux内核目录  
-如果之前已经安装过genkernel，会把linux的默认配置换成gentoo-kernel的内核配置，如果只想用linux的默认配置就执行以下命令。  
+
+(可选)如果之前已经安装过genkernel，会把linux的默认配置换成gentoo-kernel的内核配置，如果只想用linux的默认配置就执行以下命令。  
 `mv .config bak.config` # 备份gentoo-kernel的内核配置（如果还需要此配置的话）  
 `make x86_64_defconfig` # 使用linux默认配置  
-`make menuconfig`  # 进入内核配置界面，这是一个非常精简的内核配置，直接使用此配置很可能因为配置不全导致内核无法启动，要做的就是在此基础上增减一些东西  
+使用linux默认配置通常不能开箱即用，你需要检查文件系统(vfat、ext4等)、驱动(声卡、网卡、显卡等)、init子系统(systemd or openrc)、启动项(bios or uefi)等配置是否合理开启，只有满足条件内核才能正常启动运行。  
+
+`make menuconfig`  # 进入内核配置界面  
 `make -j6`  #用6线程来编译内核  
 `make modules_install`  #编译模块  
 `make install`  #完成整个内核编译过程  
@@ -247,9 +250,9 @@ gentoo的特色之二，就是鼓励自行配置系统内核。
 使用以上三种方法的任意一种来完成内核安装操作后，一定需要配置引导加载程序。  
 配置引导加载程序也有很多种，推荐以grub为主，https://wiki.gentoo.org/wiki/Grub。  
 要配置grub，请执行以下命令。  
-emerge --ask sys-boot/grub  # 安装grub  
-grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=Gentoo  
-grub-mkconfig -o /boot/grub/grub.cfg  
+`emerge --ask sys-boot/grub`  # 安装grub  
+`grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=Gentoo`  
+`grub-mkconfig -o /boot/grub/grub.cfg`  
 
 ### 配置网络  
 emerge --ask dhcpcd  
